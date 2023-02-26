@@ -13,10 +13,11 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static java.lang.System.out;
 
-@WebServlet(name = "audios", urlPatterns = "/audiosItem")
+@WebServlet(name = "audios", urlPatterns = "/audiomap")
 public class Audioservlet2 extends HttpServlet {
 	ConcurrentHashMap<String, Audio2> audioDB = new ConcurrentHashMap<>();
 
@@ -116,4 +117,55 @@ public class Audioservlet2 extends HttpServlet {
 
 
     }
+    @Override
+    protected void doPost( HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+
+//        String id = request.getParameter("id");
+        ObjectMapper mapper = new ObjectMapper();
+        Audio2 audio = mapper.readValue(request.getInputStream(), Audio2.class);
+        
+        String Artist_name = audio.getArtist_name();
+
+        String Track_title = audio.getTrack_title();
+        
+        String Album_title=audio.getAlbumTitle();
+
+        Integer Track_number = audio.getTrack_number();
+
+        Integer Year = audio.getYear();
+
+        Integer Reviews_count = audio.getReviews_count();
+
+        Integer Copies_sold = audio.getCopies_sold();
+
+        Audio2 audioSelected = new Audio2(Artist_name, Track_title,Album_title, Track_number, Year, Reviews_count, Copies_sold);
+
+
+        String size = String.valueOf(audioDB.size()+1);
+        String id = "id_" + size;
+        audioDB.put(id, audioSelected);
+        Integer totalCopiesSold= 0;
+
+        for (Audio2 audioFor : audioDB.values()){
+            totalCopiesSold=totalCopiesSold+audioFor.getCopies_sold();
+        }
+
+
+        response.setStatus(200);
+       Gson gson = new Gson();
+
+        JsonElement element = gson.toJsonTree(audioDB);
+        OutputStream out = response.getOutputStream();
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+
+
+        response.getOutputStream().println("POST RESPONSE: Artist " + gson.toJson(audio) + " is added to the database.");
+
+        out.write(("GET RESPONSE IN JSON - all elements " + element.toString()).getBytes());
+
+        out.write(("Total Copies Sold "+ gson.toJson(totalCopiesSold)).getBytes());
+        out.flush();
+    }
+    
 }
